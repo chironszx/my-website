@@ -1,136 +1,326 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>🌑 Sombras Entre Nós</title>
-  <style>
-    body {
-      background: #0a0a0a;
-      color: #e0e0e0;
-      font-family: 'Georgia', serif;
-      padding: 30px;
-      text-align: center;
-    }
-    h1 {
-      margin-bottom: 10px;
-    }
-    #jogo, #conexao {
-      max-width: 600px;
-      margin: auto;
-      background: #1a1a1a;
-      padding: 20px;
-      border: 1px solid #444;
-      border-radius: 6px;
-    }
-    button, input {
-      background: #333;
-      color: #fff;
-      border: none;
-      padding: 10px;
-      margin: 10px;
-      font-size: 16px;
-    }
-    button:hover {
-      background: #555;
-    }
-    #texto {
-      margin: 20px 0;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crônicas de Elyndor</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>🌑 Sombras Entre Nós</h1>
-
-  <div id="conexao">
-    <button onclick="criarJogo()">🎮 Criar Jogo</button><br />
-    <input id="idConectar" placeholder="Código do jogador" /><br />
-    <button onclick="entrarNoJogo()">🔗 Entrar no Jogo</button>
-    <p id="meuId"></p>
+  <div class="game-container">
+    <h1>Crônicas de Elyndor</h1>
+    <div id="game-text"></div>
+    <div id="choices"></div>
+    <div id="status">
+      <p><strong>Inventário:</strong> <span id="inventario"></span></p>
+      <p><strong>Hora atual:</strong> <span id="tempo"></span></p>
+      <p><strong>Reputação:</strong> <span id="reputacao"></span></p>
+      <p><strong>Missões:</strong> <span id="missoes"></span></p>
+    </div>
   </div>
-
-  <div id="jogo" style="display: none;">
-    <div id="texto">Aguardando conexão...</div>
-    <div id="escolhas"></div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.4.7/dist/peerjs.min.js"></script>
-  <script>
-    let peer, conn;
-    let historiaIndex = 0;
-
-    const historias = [
-      {
-        texto: "Você acorda em uma sala escura. Uma lanterna brilha entre as sombras.",
-        escolhas: [
-          { texto: "Pegar a lanterna", evento: "pegou" },
-          { texto: "Ignorar e explorar no escuro", evento: "escuro" }
-        ]
-      },
-      {
-        texto: "Um portão com símbolos antigos bloqueia o caminho.",
-        escolhas: [
-          { texto: "Tocar os símbolos", evento: "tocar" },
-          { texto: "Gritar por ajuda", evento: "gritar" }
-        ]
-      },
-      {
-        texto: "Uma voz murmura: 'Só dois podem passar. Escolham com sabedoria.'",
-        escolhas: [
-          { texto: "Avançar juntos", evento: "juntos" },
-          { texto: "Deixar um ficar para trás", evento: "ficar" }
-        ]
-      }
-    ];
-
-    function criarJogo() {
-      peer = new Peer();
-      peer.on('open', id => {
-        document.getElementById('meuId').innerText = 'Compartilhe este código: ' + id;
-      });
-      peer.on('connection', connection => {
-        conn = connection;
-        iniciarConexao();
-      });
-    }
-
-    function entrarNoJogo() {
-      const id = document.getElementById('idConectar').value.trim();
-      peer = new Peer();
-      conn = peer.connect(id);
-      conn.on('open', iniciarConexao);
-    }
-
-    function iniciarConexao() {
-      document.getElementById('conexao').style.display = 'none';
-      document.getElementById('jogo').style.display = 'block';
-      mostrarHistoria();
-      conn.on('data', data => {
-        if (data.historia !== undefined) {
-          historiaIndex = data.historia;
-          mostrarHistoria();
-        }
-      });
-    }
-
-    function mostrarHistoria() {
-      const container = document.getElementById('texto');
-      const escolhaEl = document.getElementById('escolhas');
-      const cena = historias[historiaIndex];
-
-      container.innerHTML = `<p>${cena.texto}</p>`;
-      escolhaEl.innerHTML = "";
-
-      cena.escolhas.forEach(escolha => {
-        const btn = document.createElement('button');
-        btn.textContent = escolha.texto;
-        btn.onclick = () => {
-          historiaIndex++;
-          conn.send({ historia: historiaIndex });
-          mostrarHistoria();
-        };
-        escolhaEl.appendChild(btn);
-      });
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
+<style>
+    body {
+  background-color: #1e1e2f;
+  color: #f5f5f5;
+  font-family: 'Georgia', serif;
+  padding: 20px;
+}
+
+.game-container {
+  max-width: 700px;
+  margin: auto;
+  background-color: #2a2a3d;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+button {
+  margin: 10px 5px;
+  padding: 10px 15px;
+  background-color: #444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #666;
+}
+
+#status {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+</style>
+
+<script>
+    const gameText = document.getElementById("game-text");
+const choices = document.getElementById("choices");
+const inventarioDisplay = document.getElementById("inventario");
+const tempoDisplay = document.getElementById("tempo");
+const reputacaoDisplay = document.getElementById("reputacao");
+const missoesDisplay = document.getElementById("missoes");
+
+let inventario = [];
+let horas = 6;
+
+let reputacao = {
+  vila: 0,
+  floresta: 0,
+  montanha: 0
+};
+
+let missoes = [
+  {
+    id: "medalhao_perdido",
+    nome: "O Medalhão Perdido",
+    status: "inativa",
+    objetivo: "Recuperar o medalhão do ancião nas florestas sombrias",
+    recompensa: ["Medalhão Antigo", "Reputação +10 (vila)"]
+  }
+];
+
+function atualizarInventario() {
+  inventarioDisplay.innerText = inventario.length ? inventario.join(", ") : "vazio";
+}
+
+function avancarTempo(horasPassadas) {
+  horas = (horas + horasPassadas) % 24;
+  const periodo = horas < 6 || horas >= 18 ? "Noite" : "Dia";
+  tempoDisplay.innerText = `${horas}:00 (${periodo})`;
+}
+
+function atualizarReputacao() {
+  reputacaoDisplay.innerText = Object.entries(reputacao)
+    .map(([f, v]) => `${f}: ${v}`)
+    .join(" | ");
+}
+
+function atualizarMissoes() {
+  const ativas = missoes.filter(m => m.status === "ativa").map(m => m.nome);
+  missoesDisplay.innerText = ativas.length ? ativas.join(", ") : "nenhuma";
+}
+
+function showText(texto) {
+  gameText.innerText = texto;
+}
+
+function setChoices(opcoes) {
+  choices.innerHTML = "";
+  opcoes.forEach(opcao => {
+    const botao = document.createElement("button");
+    botao.textContent = opcao.texto;
+    botao.onclick = opcao.proxima;
+    choices.appendChild(botao);
+  });
+}
+
+function adicionarItem(item) {
+  inventario.push(item);
+  atualizarInventario();
+}
+
+function alterarReputacao(faccao, valor) {
+  reputacao[faccao] += valor;
+  atualizarReputacao();
+}
+
+function ativarMissao(id) {
+  const m = missoes.find(m => m.id === id);
+  if (m && m.status === "inativa") {
+    m.status = "ativa";
+    showText(`Nova missão: ${m.nome}\n${m.objetivo}`);
+    atualizarMissoes();
+  }
+}
+
+function concluirMissao(id) {
+  const m = missoes.find(m => m.id === id);
+  if (m && m.status === "ativa") {
+    m.status = "concluida";
+    showText(`Missão concluída: ${m.nome}`);
+    adicionarItem("Medalhão Antigo");
+    alterarReputacao("vila", 10);
+    atualizarMissoes();
+  }
+}
+
+function iniciarCombate() {
+  let inimigo = { nome: "Goblin das Sombras", hp: 10 };
+  showText(`Um ${inimigo.nome} aparece!`);
+
+  setChoices([
+    {
+      texto: "Atacar",
+      proxima: () => {
+        inimigo.hp -= 6;
+        if (inimigo.hp <= 0) {
+          showText(`Você derrotou o ${inimigo.nome} e achou um Dente Obscuro.`);
+          adicionarItem("Dente Obscuro");
+          alterarReputacao("floresta", 5);
+          setChoices([{ texto: "Continuar", proxima: startGame }]);
+        } else {
+          showText(`${inimigo.nome} ainda resiste! HP: ${inimigo.hp}`);
+          setChoices([
+            { texto: "Atacar novamente", proxima: iniciarCombate },
+            { texto: "Fugir", proxima: () => showText("Você escapou por pouco.") }
+          ]);
+        }
+      }
+    }
+  ]);
+}
+
+function explorarFloresta() {
+  const m = missoes.find(m => m.id === "medalhao_perdido" && m.status === "ativa");
+  if (m) {
+    concluirMissao("medalhao_perdido");
+  } else {
+    showText("A floresta está silenciosa, mas cheia de mistérios.");
+  }
+  setChoices([{ texto: "Voltar", proxima: startGame }]);
+}
+
+function viajarPara(regiao) {
+  const regioes = {
+    floresta: "As árvores sussurram mistérios esquecidos...",
+    montanha: "O pico da montanha toca o céu.",
+    vila: "A vila vibra com histórias e segredos."
+  };
+
+  avancarTempo(2);
+  showText(`Você chegou em ${regiao.toUpperCase()}: ${regioes[regiao]}`);
+
+  setChoices([
+    { texto: "Explorar", proxima: regiao === "floresta" ? explorarFloresta : iniciarCombate },
+    { texto: "Conversar com os locais", proxima: () => verificarReputacao(regiao) },
+    { texto: "Voltar", proxima: startGame }
+  ]);
+}
+
+function verificarReputacao(regiao) {
+  const nivel = reputacao[regiao];
+  if (nivel >= 10) {
+    showText("Você é recebido com respeito e admiração.");
+  } else if (nivel <= -10) {
+    showText("Os habitantes desconfiam de você.");
+  } else {
+    showText("Você é observado com cautela.");
+  }
+  setChoices([{ texto: "Voltar", proxima: () => viajarPara(regiao) }]);
+}
+
+function falarComAnciao() {
+  showText("O ancião fala de um medalhão perdido na floresta...");
+  ativarMissao("medalhao_perdido");
+  setChoices([{ texto: "Buscar o medalhão", proxima: () => viajarPara("floresta") }]);
+}
+
+function startGame() {
+  avancarTempo(0);
+  atualizarInventario();
+  atualizarReputacao();
+  atualizarMissoes();
+
+  showText("Você desperta na clareira com caminhos para três lugares...");
+
+  setChoices([
+    { texto: "Ir à Floresta", proxima: () => viajarPara("floresta") },
+    { texto: "Subir a Montanha", proxima: () => viajarPara("montanha") },
+    { texto: "Visitar a Vila", proxima: () => viajarPara("vila") },
+    { texto: "Falar com o Ancião", proxima: falarComAnciao }
+  ]);
+}
+// ====== REINOS E REGIÕES ======
+const reinos = {
+  valeria: {
+    nome: "Valéria",
+    descricao: "Um reino próspero envolto em florestas mágicas.",
+    reputacao: 0
+  },
+  osgard: {
+    nome: "Osgard",
+    descricao: "Terras congeladas habitadas por guerreiros ancestrais.",
+    reputacao: 0
+  },
+  nythe: {
+    nome: "Nythe",
+    descricao: "Ruínas místicas assombradas por ecos do passado.",
+    reputacao: 0
+  }
+};
+
+function exibirReinos() {
+  showText("Você pode viajar para qualquer um dos três grandes reinos.");
+  const opcoes = Object.keys(reinos).map(id => ({
+    texto: reinos[id].nome,
+    proxima: () => viajarParaReino(id)
+  }));
+  opcoes.push({ texto: "Voltar", proxima: startGame });
+  setChoices(opcoes);
+}
+
+function viajarParaReino(id) {
+  const r = reinos[id];
+  avancarTempo(4);
+  showText(`Você chega a ${r.nome} — ${r.descricao}`);
+
+  setChoices([
+    { texto: "Explorar região", proxima: () => explorarReino(id) },
+    { texto: "Conversar com moradores", proxima: () => interagirComReino(id) },
+    { texto: "Retornar ao mapa", proxima: exibirReinos }
+  ]);
+}
+
+function explorarReino(id) {
+  showText(`Você explora ${reinos[id].nome} e encontra criaturas misteriosas.`);
+  setChoices([
+    {
+      texto: "Combater criatura",
+      proxima: () => {
+        alterarReputacaoGlobal(id, 5);
+        adicionarItem("Relíquia de " + reinos[id].nome);
+        showText(`Você conquistou respeito em ${reinos[id].nome} e encontrou uma relíquia.`);
+        setChoices([{ texto: "Voltar", proxima: () => viajarParaReino(id) }]);
+      }
+    },
+    { texto: "Evitar confronto", proxima: () => viajarParaReino(id) }
+  ]);
+}
+
+function interagirComReino(id) {
+  const rep = reinos[id].reputacao;
+  let mensagem;
+  if (rep >= 10) {
+    mensagem = `Os cidadãos de ${reinos[id].nome} o saúdam com honras.`;
+  } else if (rep <= -10) {
+    mensagem = `Guardas de ${reinos[id].nome} o acompanham de perto, desconfiados.`;
+  } else {
+    mensagem = `Você conversa com alguns moradores de ${reinos[id].nome}.`;
+  }
+  showText(mensagem);
+  setChoices([{ texto: "Voltar", proxima: () => viajarParaReino(id) }]);
+}
+
+function alterarReputacaoGlobal(reinoId, valor) {
+  reinos[reinoId].reputacao += valor;
+  atualizarReputacaoGlobal();
+}
+
+function atualizarReputacaoGlobal() {
+  const resumo = Object.entries(reinos)
+    .map(([id, r]) => `${r.nome}: ${r.reputacao}`)
+    .join(" | ");
+  document.getElementById("reputacao").innerText = resumo;
+}
+
+
+
+startGame();
+
+</script>
 </html>
