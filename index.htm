@@ -1,85 +1,136 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>navbar</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Playwrite+IE+Guides&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>🌑 Sombras Entre Nós</title>
+  <style>
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Georgia', serif;
+      padding: 30px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #jogo, #conexao {
+      max-width: 600px;
+      margin: auto;
+      background: #1a1a1a;
+      padding: 20px;
+      border: 1px solid #444;
+      border-radius: 6px;
+    }
+    button, input {
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      margin: 10px;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #555;
+    }
+    #texto {
+      margin: 20px 0;
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar">
-            <a href="#" class="btn-abrir">&#9776; Abrir</a>
-            
-            <ul>
-                <li><a href="index.htm">&#9776;Inicio</a></li>
-                <li><a href="https://www.instagram.com/mjguel16/">Contato</a></li> 
-                <li><a href="cadastro.htm">Cadastre-se</a></li>
-            </ul>
-            
-        </nav>
+  <h1>🌑 Sombras Entre Nós</h1>
 
+  <div id="conexao">
+    <button onclick="criarJogo()">🎮 Criar Jogo</button><br />
+    <input id="idConectar" placeholder="Código do jogador" /><br />
+    <button onclick="entrarNoJogo()">🔗 Entrar no Jogo</button>
+    <p id="meuId"></p>
+  </div>
 
+  <div id="jogo" style="display: none;">
+    <div id="texto">Aguardando conexão...</div>
+    <div id="escolhas"></div>
+  </div>
 
-      
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <script>
+    let peer, conn;
+    let historiaIndex = 0;
 
+    const historias = [
+      {
+        texto: "Você acorda em uma sala escura. Uma lanterna brilha entre as sombras.",
+        escolhas: [
+          { texto: "Pegar a lanterna", evento: "pegou" },
+          { texto: "Ignorar e explorar no escuro", evento: "escuro" }
+        ]
+      },
+      {
+        texto: "Um portão com símbolos antigos bloqueia o caminho.",
+        escolhas: [
+          { texto: "Tocar os símbolos", evento: "tocar" },
+          { texto: "Gritar por ajuda", evento: "gritar" }
+        ]
+      },
+      {
+        texto: "Uma voz murmura: 'Só dois podem passar. Escolham com sabedoria.'",
+        escolhas: [
+          { texto: "Avançar juntos", evento: "juntos" },
+          { texto: "Deixar um ficar para trás", evento: "ficar" }
+        ]
+      }
+    ];
 
-    </header>
-
- 
-  
-    
-</body>
-<style>
-
-    body{
-        box-sizing: border-box;
-        margin: 0px;
-        padding: 0px;
-        background-color: rgb(108, 106, 102);
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    function criarJogo() {
+      peer = new Peer();
+      peer.on('open', id => {
+        document.getElementById('meuId').innerText = 'Compartilhe este código: ' + id;
+      });
+      peer.on('connection', connection => {
+        conn = connection;
+        iniciarConexao();
+      });
     }
-   .navbar ul{
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display:flex;
-    background-color: #333;
-   }
 
-   
-   .navbar ul li{
-    padding:10px 20px;
-   }
-   .navbar ul li a{
-    text-decoration: none;
-    color: white;
-    font-weight: bold;
-   }
-   .header{
-    color: #333;
-    padding: 20px;
-   }
+    function entrarNoJogo() {
+      const id = document.getElementById('idConectar').value.trim();
+      peer = new Peer();
+      conn = peer.connect(id);
+      conn.on('open', iniciarConexao);
+    }
 
-   
+    function iniciarConexao() {
+      document.getElementById('conexao').style.display = 'none';
+      document.getElementById('jogo').style.display = 'block';
+      mostrarHistoria();
+      conn.on('data', data => {
+        if (data.historia !== undefined) {
+          historiaIndex = data.historia;
+          mostrarHistoria();
+        }
+      });
+    }
 
-  
-  
-   
+    function mostrarHistoria() {
+      const container = document.getElementById('texto');
+      const escolhaEl = document.getElementById('escolhas');
+      const cena = historias[historiaIndex];
 
-   
+      container.innerHTML = `<p>${cena.texto}</p>`;
+      escolhaEl.innerHTML = "";
 
-</style>
-<script>
-
-    
-
-
-</script>
-
-
-
-
+      cena.escolhas.forEach(escolha => {
+        const btn = document.createElement('button');
+        btn.textContent = escolha.texto;
+        btn.onclick = () => {
+          historiaIndex++;
+          conn.send({ historia: historiaIndex });
+          mostrarHistoria();
+        };
+        escolhaEl.appendChild(btn);
+      });
+    }
+  </script>
+</body>
 </html>
